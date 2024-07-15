@@ -11,6 +11,16 @@
 #include "waterheater_sensor.h"
 #include "water_level_monitor.h"
 
+
+typedef struct {
+    float indoorSensorNumder;
+    float outdoorSensorNumder;
+    float waterheaterSensorNumder;
+    float waterLevelNumber;
+} SensorData;
+
+
+
 // 传感器实例化
 extern IndoorSensor indoorSensor;
 extern OutdoorSensor outdoorSensor;
@@ -23,6 +33,8 @@ extern SemaphoreHandle_t xMutex;
 // 二进制信号量
 extern SemaphoreHandle_t xWaterAddSemaphore;
 
+extern SensorData sensorData;
+
 // 传感器任务声明
 void taskIndoorSensor(void *pvParameters);
 void taskOutdoorSensor(void *pvParameters);
@@ -32,6 +44,7 @@ void taskWaterLevelMonitor(void *pvParameters);
 // 加水任务声明
 void taskCheckWaterLevel(void *pvParameters);
 void taskAddWater(void *pvParameters);
+
 
 // 自检函数声明
 bool selfTest();

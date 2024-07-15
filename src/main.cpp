@@ -1,8 +1,7 @@
 #include <Arduino.h>
 #include "sensors_and_monitor.h"
-#include <esp_now.h>
-#include <WiFi.h>
-#include <WiFiClient.h>
+#include "WiFiSTAClient.h"
+#include <ArduinoJson.h>
 
 // 定义一个debug标记
 #define DEBUG_FLAG 1
@@ -14,7 +13,7 @@ const TickType_t WATERHEATER_SENSOR_INTERVAL = 5000 / portTICK_PERIOD_MS;  // �
 const TickType_t WATER_LEVEL_MONITOR_INTERVAL = 5000 / portTICK_PERIOD_MS; // 每5秒执行一次
 const TickType_t checkWaterLevelDelay = pdMS_TO_TICKS(3000);               // 每3秒执行一次
 const TickType_t addWaterDelay = pdMS_TO_TICKS(5000);                      // 每5秒执行一次
-
+const TickType_t senddataDelay = pdMS_TO_TICKS(2000);
 #else
 // 定义任务执行间隔时间（单位：毫秒）
 const TickType_t ROOM_SENSOR_INTERVAL = 300000 / portTICK_PERIOD_MS;         // 每5分钟行一次
@@ -22,33 +21,68 @@ const TickType_t ANTIFREEZE_SENSOR_INTERVAL = 300000 / portTICK_PERIOD_MS;   // 
 const TickType_t WATERHEATER_SENSOR_INTERVAL = 300000 / portTICK_PERIOD_MS;  // 每5分钟行一次
 const TickType_t WATER_LEVEL_MONITOR_INTERVAL = 300000 / portTICK_PERIOD_MS; // 每5分钟行一次
 const TickType_t checkWaterLevelDelay = pdMS_TO_TICKS(3600000);              // 每1小时执行一次
-const TickType_t addWaterDelay = pdMS_TO_TICKS(7200000);                     // 每2小时执行一次
+const TickType_t addWaterDelay = pdMS_TO_TICKS(7200000);
+const TickType_t senddataDelay = pdMS_TO_TICKS(5000);                     // 每2小时执行一次
 #endif
 
-// AP 的 SSID 和密码
-const char *ssid = "ESP32_AP";
-const char *password = "12345678";
+const char *sta_ssid = "ESP32_AP";
+const char *sta_password = "12345678";
+const char *sta_server_ip = "192.168.4.1";
+const int sta_server_port = 80;
 
-// 创建一个 WiFiServer 对象
-WiFiServer server(80);
+WiFiSTAClient staClient(sta_ssid, sta_password, sta_server_ip, sta_server_port);
+
+
+void tasksenddata(void *pvParameters)
+{
+
+    TickType_t interval = *(TickType_t *)pvParameters;
+    while (true)
+    {
+        // 如果连接到Wi-Fi并且连接到服务器成功，则发送数据
+        if (staClient.isAPConnected() && staClient.connectToServer())
+        {
+            // 构建JSON对象
+
+            StaticJsonDocument<200> jsonDoc; // 可以根据需要调整JSON文档的大小
+            
+            
+            jsonDoc["indoorSensor"] = sensorData.indoorSensorNumder;
+            jsonDoc["outdoorSensor"] = sensorData.outdoorSensorNumder;
+            jsonDoc["waterheaterSensor"] = sensorData.waterheaterSensorNumder;
+            jsonDoc["waterLevelMonitor"] = sensorData.waterLevelNumber;
+        
+            // 序列化JSON为字符串
+            String jsonString;
+            serializeJson(jsonDoc, jsonString);
+
+            // 向服务器发送JSON数据
+            staClient.sendData(jsonString);
+            Serial.println(staClient.receiveData());
+        }
+
+        // 延迟一段时间后再次发送数据（示例中为2秒）
+        vTaskDelay(interval);
+    }
+}
+
 
 void setup()
 {
     Serial.begin(115200);
-    // 设置 ESP32 为 AP 模式
-    // WiFi.softAP(ssid, password);
-
-    // // 启动服务器
-    // server.begin();
-
-    // Serial.print("AP IP address: ");
-    // Serial.println(WiFi.softAPIP());
+    staClient.connectToAP();
+    if (staClient.isAPConnected())
+    {
+        Serial.println("WiFi connected");
+        if (staClient.connectToServer())
+        {
+            Serial.println("Connected to server");
+        };
+    }
 
     Serial.println("Starting up...");
 
     pinMode(WORK_MOS_PIN, OUTPUT);
-    pinMode(RELAY_1_PIN, OUTPUT);
-    pinMode(RELAY_2_PIN, OUTPUT);
 
     // 自检
     // if (!selfTest())
@@ -78,30 +112,10 @@ void setup()
     {
         Serial.println("Failed to create mutex");
     }
+    xTaskCreate(tasksenddata, "SendDataTask", 2048, (void *)&senddataDelay, 1, NULL);
 }
 
 void loop()
 {
-    // 处理客户端连接
-    // WiFiClient client = server.available(); // 检查是否有新的客户端连接
-
-    // if (client)
-    // { // 如果有新的客户端连接
-    //     Serial.println("New Client Connected.");
-    //     if (client.connected())
-    //     {
-    //         if (client.available())
-    //         {                                                  // 如果客户端有数据可读
-    //             String request = client.readStringUntil('\r'); // 读取数据
-    //             Serial.println(request);
-    //             client.flush();
-
-    //             // 回复客户端
-    //             client.print("Hello from ESP32 AP");
-    //             delay(10);
-    //         }
-    //     }
-    //     client.stop(); // 关闭客户端连接
-    //     Serial.println("Client Disconnected.");
-    // }
+    delay(2000);
 }

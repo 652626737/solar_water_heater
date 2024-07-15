@@ -1,13 +1,15 @@
 #include "water_level_monitor.h"
 #include <Arduino.h>
 #include "ntc_config.h"
+#include "RelayControl.h"
 
 WaterLevelMonitor::WaterLevelMonitor(int adcPin) : adcPin(adcPin), kalmanFilter(2, 0.5, 1023, 0)
 {
 }
 
 float WaterLevelMonitor::update()
-{   float waterLevelPercentage = 0.00;
+{
+    float waterLevelPercentage = 0.00;
     // 读取ADC值并计算水位百分比
     float adcValue = readADCValue();
     waterLevelPercentage = calculateWaterLevelPercentage(adcValue);
@@ -55,31 +57,43 @@ float linearInterpolation(int x, int x0, int x1, float y0, float y1)
  *
  * @return 返回水位百分比，范围为 0.0 到 100.0
  */
-float WaterLevelMonitor::calculateWaterLevelPercentage(float adcValue) {
+float WaterLevelMonitor::calculateWaterLevelPercentage(float adcValue)
+{
     // 根据ADC值计算水位百分比
-    if (adcValue<ADC_20_PERCENT) {
+    if (adcValue < ADC_20_PERCENT)
+    {
         return 0.0;
-    } else if (adcValue<ADC_50_PERCENT && adcValue>=ADC_20_PERCENT) {
+    }
+    else if (adcValue < ADC_50_PERCENT && adcValue >= ADC_20_PERCENT)
+    {
         return 20.0;
-    } else if (adcValue<ADC_80_PERCENT && adcValue>=ADC_50_PERCENT) {
+    }
+    else if (adcValue < ADC_80_PERCENT && adcValue >= ADC_50_PERCENT)
+    {
         return 50.0;
-    } else if (adcValue<ADC_100_PERCENT&& adcValue>=ADC_80_PERCENT) {
+    }
+    else if (adcValue < ADC_100_PERCENT && adcValue >= ADC_80_PERCENT)
+    {
         return 80.0;
-    } else if (adcValue>ADC_100_PERCENT) {
+    }
+    else if (adcValue > ADC_100_PERCENT)
+    {
         return 100.0;
-    } else {
-        return -1;  // 如果ADC值不在任何范围内，则水位为0%
+    }
+    else
+    {
+        return -1; // 如果ADC值不在任何范围内，则水位为0%
     }
 }
 
 void WaterLevelMonitor::addWater()
 {
-    
-    unsigned long startTime = millis();                  // 记录加水开始时间
+
+    unsigned long startTime = millis(); // 记录加水开始时间
 
     Serial.println("Adding water...");
-
-    digitalWrite(RELAY_1_PIN, HIGH); // 打开加水设备，示例中假设使用继电器控制加水
+    RelayControl relay1(RELAY_PIN_1);
+    relay1.on(); // 打开继电器 1
 
     while (true)
     {
@@ -104,5 +118,5 @@ void WaterLevelMonitor::addWater()
         delay(1000); // 延迟1秒钟，继续监测水位
     }
 
-    digitalWrite(RELAY_1_PIN, LOW); // 关闭加水设备
+    relay1.off(); // 关闭继电器 1
 }

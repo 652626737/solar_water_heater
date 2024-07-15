@@ -5,10 +5,13 @@ OutdoorSensor outdoorsensor(R0_ANTIFREEZE_ADC_PIN);
 WaterheaterSensor waterheaterSensor(R0_WATERHEATER_ADC_PIN);
 WaterLevelMonitor waterLevelMonitor(WATER_LEVEL_ADC_PIN);
 
+
 // 信号量
 SemaphoreHandle_t xMutex;
 SemaphoreHandle_t xWaterAddSemaphore;
 volatile bool waterAddingInProgress = false; // 全局标志，指示是否正在进行加水
+
+SensorData sensorData;
 
 void taskIndoorSensor(void *pvParameters)
 {
@@ -19,9 +22,9 @@ void taskIndoorSensor(void *pvParameters)
         {
             digitalWrite(WORK_MOS_PIN, HIGH);
             vTaskDelay(50);
-            float temperature = indoorSensor.readTemperature();
+            sensorData.indoorSensorNumder = indoorSensor.readTemperature();
             Serial.print("Room Temperature: ");
-            Serial.println(temperature);
+            Serial.println(sensorData.indoorSensorNumder);
             digitalWrite(WORK_MOS_PIN, LOW);
             xSemaphoreGive(xMutex);
         }
@@ -37,10 +40,10 @@ void taskOutdoorSensor(void *pvParameters)
         if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
         {
             digitalWrite(WORK_MOS_PIN, HIGH);
-            float temperature = outdoorsensor.readTemperature();
+            sensorData.outdoorSensorNumder = outdoorsensor.readTemperature();
             Serial.print("Antifreeze Temperature: ");
-            Serial.println(temperature);
-            // digitalWrite(WORK_MOS_PIN, LOW);
+            Serial.println(sensorData.outdoorSensorNumder);
+            digitalWrite(WORK_MOS_PIN, LOW);
             xSemaphoreGive(xMutex);
         }
         vTaskDelay(interval);
@@ -56,9 +59,9 @@ void taskWaterheaterSensor(void *pvParameters)
         {
             digitalWrite(WORK_MOS_PIN, HIGH);
             vTaskDelay(50);
-            float temperature = waterheaterSensor.readTemperature();
+            sensorData.waterheaterSensorNumder = waterheaterSensor.readTemperature();
             Serial.print("Water Heater Temperature: ");
-            Serial.println(temperature);
+            Serial.println(sensorData.waterheaterSensorNumder);
             digitalWrite(WORK_MOS_PIN, LOW);
             xSemaphoreGive(xMutex);
         }
@@ -75,9 +78,9 @@ void taskWaterLevelMonitor(void *pvParameters)
         {
             digitalWrite(WORK_MOS_PIN, HIGH);
             vTaskDelay(50);
-            float waterLevel = waterLevelMonitor.update();
+            sensorData.waterheaterSensorNumder = waterLevelMonitor.update();
             Serial.print("Water Level: ");
-            Serial.println(waterLevel);
+            Serial.println(sensorData.waterheaterSensorNumder);
             digitalWrite(WORK_MOS_PIN, LOW);
             xSemaphoreGive(xMutex);
         }
@@ -110,6 +113,8 @@ void taskCheckWaterLevel(void *pvParameters)
     }
 }
 
+
+
 void taskAddWater(void *pvParameters)
 {
     TickType_t interval = *(TickType_t *)pvParameters;
@@ -129,6 +134,7 @@ void taskAddWater(void *pvParameters)
         xSemaphoreGive(xMutex);
     }
 }
+
 
 bool selfTest()
 {
