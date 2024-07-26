@@ -17,8 +17,8 @@ float OutdoorSensor::readTemperature()
 {
     // 计算第二级分压后的电压值
     float voltage = analogReadMilliVolts(adcPin) / 1000.00;
-    Serial.print("voltage = ");
-    Serial.println(voltage);
+    // Serial.print("voltage = ");
+    // Serial.println(voltage);
 
     // 计算NTC热敏电阻的阻值
     float Rntc = calculateResistance(voltage);

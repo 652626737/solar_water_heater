@@ -23,8 +23,8 @@ float WaterLevelMonitor::readADCValue()
 
     // Serial.print("ADC Value: ");
     // Serial.print(adcValue);
-    Serial.print(" Filtered Value: ");
-    Serial.println(filteredValue);
+    // Serial.print(" Filtered Value: ");
+    // Serial.println(filteredValue);
 
     return filteredValue;
 }

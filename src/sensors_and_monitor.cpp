@@ -78,9 +78,9 @@ void taskWaterLevelMonitor(void *pvParameters)
         {
             digitalWrite(WORK_MOS_PIN, HIGH);
             vTaskDelay(50);
-            sensorData.waterheaterSensorNumder = waterLevelMonitor.update();
+            sensorData.waterLevelNumber = waterLevelMonitor.update();
             Serial.print("Water Level: ");
-            Serial.println(sensorData.waterheaterSensorNumder);
+            Serial.println(sensorData.waterLevelNumber);
             digitalWrite(WORK_MOS_PIN, LOW);
             xSemaphoreGive(xMutex);
         }

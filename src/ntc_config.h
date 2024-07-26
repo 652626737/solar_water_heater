@@ -9,6 +9,8 @@ const int WATER_LEVEL_ADC_PIN = 32;    // 水位传感器连接的模拟输入�
 const int WORK_MOS_PIN = 18;           // 水位传感器检测到水位的LED引脚
 const int RELAY_PIN_1 = 14;            // 继电器引脚
 const int RELAY_PIN_2 = 12;            // 继电器引脚
+const int WIFI_LED = 17;               // WIFI_LED器引脚
+const int STATUS_LED = 16;             // STATUS_LED引脚
 
 const int R0_room = 1000.00;
 
@@ -30,7 +32,5 @@ const unsigned long MAX_ADD_WATER_TIME_MS = 1200000; // 最长加水时间为20�
 const float R0_room_compensation = 1.0;        // 房间NTC热敏电阻温度补偿系数
 const float R0_antifreeze_compensation = 3.0;  // 防冻NTC热敏电阻温度补偿系数
 const float R0_waterheater_compensation = 2.0; // 热水NTC热敏电阻温度补偿系数
-
-
 
 #endif // NTC_CONFIG_H
