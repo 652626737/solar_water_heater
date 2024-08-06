@@ -10,6 +10,7 @@
 #include "outdoor_sensor.h"
 #include "waterheater_sensor.h"
 #include "water_level_monitor.h"
+#include "RelayControl.h"
 
 
 typedef struct {

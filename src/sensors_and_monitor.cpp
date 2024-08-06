@@ -5,7 +5,6 @@ OutdoorSensor outdoorsensor(R0_ANTIFREEZE_ADC_PIN);
 WaterheaterSensor waterheaterSensor(R0_WATERHEATER_ADC_PIN);
 WaterLevelMonitor waterLevelMonitor(WATER_LEVEL_ADC_PIN);
 
-
 // 信号量
 SemaphoreHandle_t xMutex;
 SemaphoreHandle_t xWaterAddSemaphore;
@@ -113,8 +112,6 @@ void taskCheckWaterLevel(void *pvParameters)
     }
 }
 
-
-
 void taskAddWater(void *pvParameters)
 {
     TickType_t interval = *(TickType_t *)pvParameters;
@@ -122,19 +119,47 @@ void taskAddWater(void *pvParameters)
     {
         if (xSemaphoreTake(xWaterAddSemaphore, portMAX_DELAY) == pdTRUE && xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
         {
-            vTaskDelay(interval);
+            unsigned long startTime = millis(); // 记录加水开始时间
             digitalWrite(WORK_MOS_PIN, HIGH);
             Serial.println("Adding water...");
-            waterLevelMonitor.addWater(); // 假设 waterLevelMonitor.addWater() 是加水函数
+
+            RelayControl relay1(RELAY_PIN_1);
+            relay1.on(); // 打开继电器 1
+
+            while (true)
+            {
+                float waterLevelPercentage = waterLevelMonitor.update(); // 更新水位百分比
+                sensorData.waterLevelNumber = waterLevelPercentage;      // 更新全局变量
+                Serial.print("Water Level Percentage: ");
+                Serial.println(waterLevelPercentage);
+
+                // 检查水位是否达到100%
+                if (waterLevelPercentage == 100.00)
+                {
+                    Serial.println("Water added successfully.");
+                    break; // 水位达到100%，结束加水
+                }
+
+                // 检查加水时间是否超过最大时间限制
+                if (millis() - startTime > MAX_ADD_WATER_TIME_MS)
+                {
+                    Serial.println("Max add water time exceeded. Stopping.");
+                    break; // 超过最长加水时间，结束加水
+                }
+
+                vTaskDelay(1000); // 延迟1秒钟，继续监测水位
+            }
+
+            relay1.off(); // 关闭继电器 1
             digitalWrite(WORK_MOS_PIN, LOW);
             Serial.println("Water addition complete.");
             // 加水完成后，重置标志
             waterAddingInProgress = false;
+            xSemaphoreGive(xMutex);
         }
-        xSemaphoreGive(xMutex);
+        vTaskDelay(interval);
     }
 }
-
 
 bool selfTest()
 {

@@ -85,38 +85,3 @@ float WaterLevelMonitor::calculateWaterLevelPercentage(float adcValue)
         return -1; // 如果ADC值不在任何范围内，则水位为0%
     }
 }
-
-void WaterLevelMonitor::addWater()
-{
-
-    unsigned long startTime = millis(); // 记录加水开始时间
-
-    Serial.println("Adding water...");
-    RelayControl relay1(RELAY_PIN_1);
-    relay1.on(); // 打开继电器 1
-
-    while (true)
-    {
-
-        float waterLevelPercentage = update(); // 更新水位百分比
-        Serial.println("waterLevelPercentage:");
-        Serial.println(waterLevelPercentage);
-        // 检查水位是否达到100%
-        if (waterLevelPercentage == 100.00)
-        {
-            Serial.println("Water added successfully.");
-            break; // 水位达到100%，结束加水
-        }
-
-        // 检查加水时间是否超过最大时间限制
-        if (millis() - startTime > MAX_ADD_WATER_TIME_MS)
-        {
-            Serial.println("Max add water time exceeded. Stopping.");
-            break; // 超过最长加水时间，结束加水
-        }
-
-        delay(1000); // 延迟1秒钟，继续监测水位
-    }
-
-    relay1.off(); // 关闭继电器 1
-}

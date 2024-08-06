@@ -8,7 +8,6 @@ class WaterLevelMonitor
 public:
     WaterLevelMonitor(int adcPin);
     float update();
-    void addWater();
 
 private:
     int adcPin;
